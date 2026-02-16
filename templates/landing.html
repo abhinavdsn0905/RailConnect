@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="hero-title">Book Train Tickets Easily 🚆</h1>
+<p class="hero-subtitle">
+    Fast, Secure & Simple Online Train Reservation System
+</p>
+
+<div class="hero-buttons">
+    <a href="{% url 'train_list' %}" class="primary-btn">
+        Search Trains
+    </a>
+
+    <a href="{% url 'my_bookings' %}" class="secondary-btn">
+        View Bookings
+    </a>
+</div>
+<!-- IMAGE SLIDER -->
+<div class="slider">
+    <div class="slide-track">
+
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1474487548417-781cb71495f3" alt="">
+        </div>
+
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1508614589041-895b88991e3e" alt="">
+        </div>
+
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1516906736502-5a6d3b3d7f3d" alt="">
+        </div>
+
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429" alt="">
+        </div>
+
+        <!-- duplicate for smooth loop -->
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1474487548417-781cb71495f3" alt="">
+        </div>
+
+        <div class="slide">
+            <img src="https://images.unsplash.com/photo-1508614589041-895b88991e3e" alt="">
+        </div>
+
+    </div>
+</div>
+
+
+    </div>
+</div>
+
+{% endblock %}

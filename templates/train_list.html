@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/trains.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="page-title">Search Trains</h2>
+
+<div class="search-section">
+    <form method="GET">
+        <input type="text" name="source" placeholder="Source">
+        <input type="text" name="destination" placeholder="Destination">
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<h3 class="sub-title">Available Trains</h3>
+
+<table class="train-table">
+    <thead>
+        <tr>
+            <th>Train No</th>
+            <th>Name</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Departure</th>
+            <th>Arrival</th>
+            <th>Price</th>
+            <th>Seats</th>
+            <th>Action</th>   <!-- 🔥 This was missing -->
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for train in trains %}
+        <tr>
+            <td>{{ train.train_number }}</td>
+            <td>{{ train.train_name }}</td>
+            <td>{{ train.source }}</td>
+            <td>{{ train.destination }}</td>
+            <td>{{ train.departure_time }}</td>
+            <td>{{ train.arrival_time }}</td>
+            <td>₹{{ train.price }}</td>
+            <td>{{ train.available_seats }}</td>
+
+            <td>
+                {% if train.available_seats > 0 %}
+                    <a href="{% url 'book_train' train.id %}" class="book-btn">
+                        Book
+                    </a>
+                {% else %}
+                    <span class="disabled-btn">Full</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9">No trains found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

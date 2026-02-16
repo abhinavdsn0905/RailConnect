@@ -1,0 +1,27 @@
+/* My Bookings Page */
+
+.bookings-title {
+    margin-bottom: 30px;
+}
+
+.bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.bookings-table th {
+    background: #0f172a;
+    padding: 12px;
+}
+
+.bookings-table td {
+    padding: 12px;
+    border-top: 1px solid #334155;
+}
+
+.bookings-table tr:hover {
+    background: #334155;
+}

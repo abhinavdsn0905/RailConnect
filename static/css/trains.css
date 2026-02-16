@@ -1,0 +1,86 @@
+/* Page Titles */
+.page-title {
+    margin-bottom: 20px;
+}
+
+.sub-title {
+    margin: 30px 0 20px 0;
+}
+
+/* Search Section */
+.search-section {
+    margin-bottom: 30px;
+}
+
+.search-section input {
+    padding: 10px;
+    width: 180px;
+    border-radius: 6px;
+    border: none;
+    margin-right: 10px;
+}
+
+.search-section button {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    background: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.search-section button:hover {
+    background: #0ea5e9;
+}
+
+/* Table Styling */
+.train-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.train-table th {
+    background: #0f172a;
+    padding: 12px;
+}
+
+.train-table td {
+    padding: 12px;
+    border-top: 1px solid #334155;
+}
+
+.train-table tr:hover {
+    background: #334155;
+}
+
+/* Book Button */
+.book-btn {
+    padding: 6px 14px;
+    background: #38bdf8;
+    color: #0f172a;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.book-btn:hover {
+    background: #0ea5e9;
+}
+
+/* Disabled Button */
+.disabled-btn {
+    color: #94a3b8;
+    font-weight: bold;
+}
+
+/* Full Text */
+.full-text {
+    color: #ff6b6b;
+    font-weight: bold;
+}

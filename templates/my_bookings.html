@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/bookings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="bookings-title">My Bookings</h2>
+
+<table class="bookings-table">
+    <thead>
+        <tr>
+            <th>Train Name</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Seats</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.train.train_name }}</td>
+            <td>{{ booking.train.source }}</td>
+            <td>{{ booking.train.destination }}</td>
+            <td>{{ booking.seats_booked }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No bookings yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
