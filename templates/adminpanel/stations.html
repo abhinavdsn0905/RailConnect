@@ -1,105 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Station Management - RailAdmin</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0e1a; color: #e2e8f0; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        h1 { color: #00d4ff; margin-bottom: 20px; font-size: 28px; }
-        .menu { margin-bottom: 30px; }
-        .menu a { display: inline-block; padding: 10px 20px; background: #1a2235; color: #00d4ff; text-decoration: none; border-radius: 8px; margin-right: 10px; border: 1px solid #1e2d45; }
-        .menu a:hover { background: #0d1b2e; }
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-box { flex: 1; padding: 10px 16px; background: #111827; border: 1px solid #1e2d45; border-radius: 8px; color: #e2e8f0; }
-        table { width: 100%; background: #111827; border-collapse: collapse; border-radius: 12px; overflow: hidden; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #1e2d45; }
-        th { color: #00d4ff; font-weight: 600; background: #0d1b2e; }
-        tr:hover { background: #1a2235; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🏛️ Station Management</h1>
-        
-        <div class="menu">
-            <a href="{% url 'adminpanel:dashboard' %}">← Back to Dashboard</a>
-        </div>
-        <button onclick="openStationModal()" style="padding: 10px 20px; background: #10b981; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">+ Add Station</button>
+{% extends "adminpanel/admin_base.html" %}
+{% block page_title %}Stations{% endblock %}
+{% block n_stations %}active{% endblock %}
+{% block topbar_title %}Station Management{% endblock %}
+{% block topbar_badge %}<span class="topbar-pill">Operations</span>{% endblock %}
 
-<div id="stationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div style="background:#111827; width:400px; margin:100px auto; padding:20px; border-radius:12px; border:1px solid #1e2d45;">
-        <h2 style="color:#00d4ff; margin-bottom:15px;">Add New Station</h2>
-        <input type="text" id="st_code" placeholder="Station Code (e.g. NDLS)" style="width:100%; padding:10px; margin-bottom:10px; background:#0a0e1a; border:1px solid #1e2d45; color:white;">
-        <input type="text" id="st_name" placeholder="Station Name" style="width:100%; padding:10px; margin-bottom:10px; background:#0a0e1a; border:1px solid #1e2d45; color:white;">
-        <input type="text" id="st_city" placeholder="City" style="width:100%; padding:10px; margin-bottom:10px; background:#0a0e1a; border:1px solid #1e2d45; color:white;">
-        <input type="text" id="st_state" placeholder="State" style="width:100%; padding:10px; margin-bottom:10px; background:#0a0e1a; border:1px solid #1e2d45; color:white;">
-        <button onclick="saveStation()" style="width:100%; padding:10px; background:#00d4ff; color:#000; border:none; border-radius:8px; font-weight:bold;">Save Station</button>
-        <button onclick="closeStationModal()" style="width:100%; padding:10px; background:transparent; color:#ef4444; border:none; margin-top:5px;">Cancel</button>
-    </div>
+{% block content %}
+
+<div class="ph">
+    <div class="ph-title">🏛️ Station Management</div>
+    <div class="ph-sub">Add and view all railway stations</div>
 </div>
 
-<script>
-function openStationModal() { document.getElementById('stationModal').style.display = 'block'; }
-function closeStationModal() { document.getElementById('stationModal').style.display = 'none'; }
+<div class="two-col">
 
-async function saveStation() {
-    const data = {
-        code: document.getElementById('st_code').value,
-        name: document.getElementById('st_name').value,
-        city: document.getElementById('st_city').value,
-        state: document.getElementById('st_state').value
-    };
+    <!-- ADD STATION FORM -->
+    <div class="t-wrap">
+        <div class="t-header">
+            <span class="t-header-title">➕ Add New Station</span>
+        </div>
+        <div style="padding: 24px;">
+            <form method="POST" action="{% url 'adminpanel:station_create' %}" class="form-stack">
+                {% csrf_token %}
 
-    const response = await fetch("{% url 'adminpanel:station_create' %}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-        body: JSON.stringify(data)
-    });
+                <div class="field">
+                    <label>Station Code</label>
+                    <input type="text" name="code" placeholder="e.g. NDLS" maxlength="10" required style="text-transform:uppercase;">
+                </div>
 
-    if (response.ok) { location.reload(); } 
-    else { alert("Error adding station"); }
-}
-</script>
-        <div class="toolbar">
-            <form method="get" style="flex: 1; display: flex; gap: 10px;">
-                <input type="text" name="q" class="search-box" placeholder="Search stations..." value="{{ query }}">
-                <button type="submit" style="padding: 10px 20px; background: #00d4ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Search</button>
+                <div class="field">
+                    <label>Station Name</label>
+                    <input type="text" name="name" placeholder="e.g. New Delhi" required>
+                </div>
+
+                <button type="submit" class="btn btn-success" style="margin-top:8px; width:100%;">Add Station</button>
             </form>
         </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Station Name</th>
-                    <th>City</th>
-                    <th>State</th>
-                    <th>Platforms</th>
-                    <th>Trains</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for station in stations %}
-                <tr>
-                    <td><strong style="color: #f59e0b;">{{ station.code }}</strong></td>
-                    <td>{{ station.name }}</td>
-                    <td>{{ station.city }}</td>
-                    <td>{{ station.state }}</td>
-                    <td>{{ station.platforms }}</td>
-                    <td>{{ station.train_count }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align: center; color: #64748b; padding: 40px;">
-                        No stations found. <a href="{% url 'admin:trains_station_add' %}" style="color: #00d4ff;">Add one in Django Admin</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
-</body>
-</html>
+
+    <!-- STATION LIST -->
+    <div>
+        <!-- SEARCH -->
+        <form method="get" class="search-row">
+            <input type="text" name="q" class="search-inp" placeholder="Search stations..." value="{{ query }}">
+            <button type="submit" class="search-btn">Search</button>
+            {% if query %}<a href="{% url 'adminpanel:station_list' %}" class="btn btn-ghost">Clear</a>{% endif %}
+        </form>
+
+        <div class="t-wrap">
+            <div class="t-header">
+                <span class="t-header-title">All Stations</span>
+                <span style="font-size:12px; color:var(--c-text-dim);">{{ stations|length }} station(s)</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for station in stations %}
+                    <tr>
+                        <td class="mono-cell">{{ station.code }}</td>
+                        <td><strong>{{ station.name }}</strong></td>
+                        <td>
+                            <a href="{% url 'adminpanel:station_delete' station.pk %}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete station {{ station.name }}?')">
+                                🗑 Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">
+                            <div class="empty">
+                                <div class="empty-icon">🏛️</div>
+                                <p>No stations found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

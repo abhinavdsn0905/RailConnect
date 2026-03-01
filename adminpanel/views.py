@@ -1,254 +1,130 @@
-
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
-from datetime import timedelta
 import json
+from django.views.decorators.csrf import csrf_exempt
 
 from user.models import User
-from trains.models import Train, Station
+from trains.models import Train, Station, TrainRoute
 from bookings.models import Booking
 
 
-
+# =========================
+# SIMPLE ADMIN CHECK
+# =========================
 def is_admin(request):
-    """Check if logged-in user is admin"""
-    username = request.session.get('username')
-    if not username:
-        return False
-    # You can add admin check logic here
-    # For now, any logged-in user can access admin panel
-    return True
+    return bool(request.session.get('username'))
 
 
-# DASHBOARD VIEW
-
+# =========================
+# DASHBOARD
+# =========================
 def admin_dashboard(request):
     if not is_admin(request):
         return redirect('login')
 
     today = timezone.now().date()
-
-    # Calculate stats
-    total_users = User.objects.count()
-    active_trains = Train.objects.filter(status='on_time').count()
-    today_bookings = Booking.objects.filter(travel_date=today).count()
-    total_revenue = Booking.objects.aggregate(total=Sum('total_price'))['total'] or 0
-
-    # Weekly booking data for chart (last 7 days)
-    weekly_data = []
-    for i in range(6, -1, -1):
-        date = today - timedelta(days=i)
-        count = Booking.objects.filter(travel_date=date).count()
-        weekly_data.append(count)
-
-    # Recent bookings
-    recent_bookings = Booking.objects.all()
-
-    # Train occupancy
-    train_occupancy = Train.objects.all()[:5]
+    recent_bookings = Booking.objects.select_related(
+        'train', 'from_station', 'to_station'
+    ).order_by('-id')[:8]
 
     context = {
-        'total_users': total_users,
-        'active_trains': active_trains,
-        'today_bookings': today_bookings,
-        'total_revenue': total_revenue,
-        'weekly_data': weekly_data,
+        'total_users': User.objects.count(),
+        'total_trains': Train.objects.count(),
+        'today_bookings': Booking.objects.filter(travel_date=today).count(),
+        'total_revenue': Booking.objects.aggregate(total=Sum('total_price'))['total'] or 0,
         'recent_bookings': recent_bookings,
-        'train_occupancy': train_occupancy,
     }
+
     return render(request, 'adminpanel/dashboard.html', context)
 
 
-
-# USER MANAGEMENT
-
-def user_list(request):
-    if not is_admin(request):
-        return redirect('login')
-
-    query = request.GET.get('q', '')
-    users = User.objects.all()
-    users_with_counts = []
-    for user in users:
-        booking_count = Booking.objects.filter(username=user.username).count()
-        users_with_counts.append((user, booking_count))
-
-    if query:
-        users = users.filter(
-            Q(username__icontains=query) |
-            Q(email__icontains=query)
-        )
-
-    return render(request, 'adminpanel/users.html', {
-        'users': users,
-        'query': query,
-    })
-
-
-def user_create(request):
-    if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user = User.objects.create(
-                username=data['username'],
-                email=data['email'],
-                password=data['password'],  # In production, hash this!
-            )
-            return JsonResponse({'success': True, 'id': user.id, 'message': 'User created successfully'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-
-    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
-
-
-def user_edit(request, pk):
-    if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    user = get_object_or_404(User, pk=pk)
-
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user.username = data.get('username', user.username)
-            user.email = data.get('email', user.email)
-            user.save()
-            return JsonResponse({'success': True, 'message': 'User updated successfully'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-
-    # GET: return user data
-    return JsonResponse({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-    })
-
-
-def user_delete(request, pk):
-    if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'DELETE':
-        user = get_object_or_404(User, pk=pk)
-        user.delete()
-        return JsonResponse({'success': True, 'message': 'User deleted'})
-
-    return JsonResponse({'success': False}, status=400)
-
-
-
+# =========================
 # TRAIN MANAGEMENT
-
+# =========================
 def train_list_admin(request):
     if not is_admin(request):
         return redirect('login')
 
     query = request.GET.get('q', '')
-    status = request.GET.get('status', '')
     trains = Train.objects.all()
 
     if query:
         trains = trains.filter(
-            Q(train_name__icontains=query) |
-            Q(train_number__icontains=query) |
-            Q(source__icontains=query) |
-            Q(destination__icontains=query)
+            Q(train_name__icontains=query) | Q(train_number__icontains=query)
         )
-    if status:
-        trains = trains.filter(status=status)
+
+    # Annotate each train with route count so we can warn in UI
+    trains = trains.prefetch_related('routes')
 
     return render(request, 'adminpanel/trains.html', {
         'trains': trains,
         'query': query,
-        'status': status,
     })
 
 
 def train_create(request):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+        return redirect('login')
 
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            train = Train.objects.create(
-                train_number=data['train_number'],
-                train_name=data['train_name'],
-                source=data['source'],
-                destination=data['destination'],
-                departure_time=data['departure_time'],
-                arrival_time=data['arrival_time'],
-                total_seats=data['total_seats'],
-                available_seats=data['total_seats'],
-                price=data.get('price', 500),
-                status=data.get('status', 'on_time'),
-            )
-            return JsonResponse({'success': True, 'id': train.id, 'message': 'Train added successfully'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+    if request.method == "POST":
+        train_number = request.POST.get("train_number")
+        train_name = request.POST.get("train_name")
+        total_seats = int(request.POST.get("total_seats"))
+        price = float(request.POST.get("price"))
 
-    return JsonResponse({'success': False}, status=400)
+        if Train.objects.filter(train_number=train_number).exists():
+            return render(request, "adminpanel/train_form.html", {
+                "error": f"Train number {train_number} already exists."
+            })
+
+        Train.objects.create(
+            train_number=train_number,
+            train_name=train_name,
+            total_seats=total_seats,
+            available_seats=total_seats,
+            price=price
+        )
+        return redirect("adminpanel:train_list")
+
+    return render(request, "adminpanel/train_form.html")
 
 
-def train_edit(request, pk):
+def train_edit(request, train_id):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+        return redirect('login')
 
-    train = get_object_or_404(Train, pk=pk)
+    train = get_object_or_404(Train, id=train_id)
 
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            train.train_name = data.get('train_name', train.train_name)
-            train.departure_time = data.get('departure_time', train.departure_time)
-            train.arrival_time = data.get('arrival_time', train.arrival_time)
-            train.total_seats = data.get('total_seats', train.total_seats)
-            train.available_seats = data.get('available_seats', train.available_seats)
-            train.status = data.get('status', train.status)
-            train.price = data.get('price', train.price)
-            train.save()
-            return JsonResponse({'success': True, 'message': 'Train updated'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+    if request.method == "POST":
+        train.train_number = request.POST.get("train_number")
+        train.train_name = request.POST.get("train_name")
+        new_total = int(request.POST.get("total_seats"))
+        train.price = float(request.POST.get("price"))
 
-    # GET: return train data
-    return JsonResponse({
-        'id': train.id,
-        'train_number': train.train_number,
-        'train_name': train.train_name,
-        'source': train.source,
-        'destination': train.destination,
-        'departure_time': str(train.departure_time),
-        'arrival_time': str(train.arrival_time),
-        'total_seats': train.total_seats,
-        'available_seats': train.available_seats,
-        'status': train.status,
-        'price': train.price,
-    })
+        # Adjust available seats proportionally
+        diff = new_total - train.total_seats
+        train.total_seats = new_total
+        train.available_seats = max(0, train.available_seats + diff)
+
+        train.save()
+        return redirect("adminpanel:train_list")
+
+    return render(request, "adminpanel/train_edit.html", {"train": train})
 
 
-def train_delete(request, pk):
+def train_delete(request, train_id):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'DELETE':
-        train = get_object_or_404(Train, pk=pk)
-        train.delete()
-        return JsonResponse({'success': True, 'message': 'Train deleted'})
-
-    return JsonResponse({'success': False}, status=400)
+        return redirect('login')
+    train = get_object_or_404(Train, id=train_id)
+    train.delete()
+    return redirect("adminpanel:train_list")
 
 
-
+# =========================
 # STATION MANAGEMENT
-
+# =========================
 def station_list(request):
     if not is_admin(request):
         return redirect('login')
@@ -258,10 +134,7 @@ def station_list(request):
 
     if query:
         stations = stations.filter(
-            Q(name__icontains=query) |
-            Q(code__icontains=query) |
-            Q(city__icontains=query) |
-            Q(state__icontains=query)
+            Q(name__icontains=query) | Q(code__icontains=query)
         )
 
     return render(request, 'adminpanel/stations.html', {
@@ -272,75 +145,105 @@ def station_list(request):
 
 def station_create(request):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+        return redirect('login')
 
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            station = Station.objects.create(
-                code=data['code'].upper(),
-                name=data['name'],
-                city=data['city'],
-                state=data['state'],
-                platforms=data.get('platforms', 1),
-            )
-            return JsonResponse({'success': True, 'id': station.id, 'message': 'Station added'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+    if request.method == "POST":
+        code = request.POST.get("code", "").upper().strip()
+        name = request.POST.get("name", "").strip()
 
-    return JsonResponse({'success': False}, status=400)
+        if Station.objects.filter(code=code).exists():
+            # Pass error back to stations page
+            stations = Station.objects.all()
+            return render(request, 'adminpanel/stations.html', {
+                'stations': stations,
+                'query': '',
+                'station_error': f"Station code '{code}' already exists.",
+            })
 
+        Station.objects.create(code=code, name=name)
+        return redirect('adminpanel:station_list')
 
-def station_edit(request, pk):
-    if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    station = get_object_or_404(Station, pk=pk)
-
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            station.name = data.get('name', station.name)
-            station.city = data.get('city', station.city)
-            station.state = data.get('state', station.state)
-            station.platforms = data.get('platforms', station.platforms)
-            station.save()
-            return JsonResponse({'success': True, 'message': 'Station updated'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-
-    return JsonResponse({
-        'id': station.id, 'code': station.code, 'name': station.name,
-        'city': station.city, 'state': station.state, 'platforms': station.platforms,
-    })
+    return redirect('adminpanel:station_list')
 
 
 def station_delete(request, pk):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-    if request.method == 'DELETE':
-        station = get_object_or_404(Station, pk=pk)
-        station.delete()
-        return JsonResponse({'success': True, 'message': 'Station deleted'})
-
-    return JsonResponse({'success': False}, status=400)
+        return redirect('login')
+    station = get_object_or_404(Station, pk=pk)
+    station.delete()
+    return redirect('adminpanel:station_list')
 
 
+# =========================
+# ROUTE MANAGEMENT
+# =========================
+def manage_routes(request, train_id):
+    if not is_admin(request):
+        return redirect('login')
 
-# BOOKING MANAGEMENT
+    train = get_object_or_404(Train, id=train_id)
+    routes = TrainRoute.objects.filter(train=train).order_by('stop_order')
+    stations = Station.objects.all()
 
+    return render(request, 'adminpanel/manage_routes.html', {
+        'train': train,
+        'routes': routes,
+        'stations': stations,
+    })
+
+
+@csrf_exempt
+def add_route_station(request, train_id):
+    if request.method == "POST":
+        train = get_object_or_404(Train, id=train_id)
+        data = json.loads(request.body)
+
+        station = get_object_or_404(Station, id=data["station_id"])
+
+        # Check if station already in this route
+        if TrainRoute.objects.filter(train=train, station=station).exists():
+            return JsonResponse({"success": False, "error": "Station already in route."})
+
+        last_route = TrainRoute.objects.filter(train=train).order_by('-stop_order').first()
+        next_order = 1 if not last_route else last_route.stop_order + 1
+
+        TrainRoute.objects.create(
+            train=train,
+            station=station,
+            stop_order=next_order,
+            arrival_time=data.get("arrival_time") or None,
+            departure_time=data.get("departure_time") or None,
+        )
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False})
+
+
+@csrf_exempt
+def delete_route_station(request, train_id, route_id):
+    if request.method == "DELETE":
+        route = get_object_or_404(TrainRoute, id=route_id, train_id=train_id)
+        route.delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False})
+
+
+# =========================
+# BOOKING ADMIN
+# =========================
 def booking_list_admin(request):
     if not is_admin(request):
         return redirect('login')
 
     query = request.GET.get('q', '')
-    bookings = Booking.objects.select_related('train').order_by('-id')
+    bookings = Booking.objects.select_related(
+        'train', 'from_station', 'to_station'
+    ).order_by('-id')
 
     if query:
         bookings = bookings.filter(
-            Q(pnr__icontains=query) |
-            Q(username__icontains=query)
+            Q(pnr__icontains=query) | Q(username__icontains=query)
         )
 
     return render(request, 'adminpanel/bookings.html', {
@@ -351,73 +254,72 @@ def booking_list_admin(request):
 
 def booking_delete(request, pk):
     if not is_admin(request):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+        return redirect('login')
 
-    if request.method == 'DELETE':
-        booking = get_object_or_404(Booking, pk=pk)
-        # Restore seats
-        booking.train.available_seats += booking.passengers
-        booking.train.save()
-        booking.delete()
-        return JsonResponse({'success': True, 'message': 'Booking deleted'})
+    booking = get_object_or_404(Booking, pk=pk)
 
-    return JsonResponse({'success': False}, status=400)
+    # Restore seats when admin deletes a booking
+    train = booking.train
+    train.available_seats += booking.passengers
+    train.save()
+
+    booking.delete()
+    return redirect('adminpanel:booking_list')
 
 
-
-# PNR LOOKUP
-
-def pnr_lookup(request):
+# =========================
+# USER MANAGEMENT
+# =========================
+def user_list(request):
     if not is_admin(request):
-        return JsonResponse({'found': False, 'message': 'Unauthorized'}, status=403)
+        return redirect('login')
 
-    pnr = request.GET.get('pnr', '').strip().upper()
-    if not pnr:
-        return JsonResponse({'found': False, 'message': 'PNR is required'})
+    query = request.GET.get('q', '')
+    users = User.objects.all()
 
-    try:
-        booking = Booking.objects.select_related('train').get(pnr=pnr)
-        return JsonResponse({
-            'found': True,
-            'pnr': booking.pnr,
-            'passenger': booking.username,
-            'train': booking.train.train_name,
-            'train_number': booking.train.train_number,
-            'from': booking.train.source,
-            'to': booking.train.destination,
-            'date': str(booking.travel_date),
-            'seats': booking.passengers,
-            'amount': str(booking.total_price),
-            'status': 'Confirmed',
+    if query:
+        users = users.filter(
+            Q(username__icontains=query) | Q(email__icontains=query)
+        )
+
+    # Since Booking uses username CharField (not FK to User),
+    # we count manually to avoid ORM annotation errors
+    user_data = []
+    for user in users:
+        booking_count = Booking.objects.filter(username=user.username).count()
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'booking_count': booking_count,
         })
-    except Booking.DoesNotExist:
-        return JsonResponse({'found': False, 'message': f'PNR {pnr} not found'})
+
+    return render(request, 'adminpanel/users.html', {
+        'users': user_data,
+        'query': query,
+    })
 
 
-
+# =========================
 # REPORTS
-
+# =========================
 def reports(request):
     if not is_admin(request):
         return redirect('login')
 
-    today = timezone.now().date()
-
-    # Stats
     total_bookings = Booking.objects.count()
     total_revenue = Booking.objects.aggregate(total=Sum('total_price'))['total'] or 0
 
-    # Top routes
+    # Group by train (since there's no source/destination field on Train model)
     top_routes = (
         Booking.objects
-        .values('train__source', 'train__destination')
-        .annotate(count=Count('id'))
-        .order_by('-count')[:5]
+        .values('train__train_name', 'train__train_number')
+        .annotate(count=Count('id'), revenue=Sum('total_price'))
+        .order_by('-count')[:10]
     )
 
-    context = {
+    return render(request, 'adminpanel/reports.html', {
         'total_bookings': total_bookings,
         'total_revenue': total_revenue,
         'top_routes': top_routes,
-    }
-    return render(request, 'adminpanel/reports.html', context)
+    })

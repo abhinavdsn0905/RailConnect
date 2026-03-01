@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'train.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "train",
+        "NAME": "train_booking",
         "USER": "root",
         "PASSWORD": "root",
         "HOST": "127.0.0.1",

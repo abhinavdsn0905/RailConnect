@@ -15,8 +15,6 @@ body {
 
 /* ================= NAVBAR ================= */
 
-/* ================= NAVBAR ================= */
-
 .navbar {
     background: linear-gradient(90deg, #1e3a8a, #2563eb);
     padding: 14px 40px;
@@ -83,48 +81,67 @@ body {
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
 }
 
-/* Username badge */
 /* ================= USER BADGE ================= */
 
 .user-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     padding: 6px 16px;
     border-radius: 25px;
     background: linear-gradient(135deg, #60a5fa, #3b82f6);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.user-icon {
-    font-size: 14px;
-}
-
-.user-name {
     color: white;
     font-weight: 600;
     font-size: 14px;
-    letter-spacing: 0.5px;
 }
 
-/* Smooth hover */
 .user-badge:hover {
     transform: translateY(-2px);
     transition: 0.3s;
 }
 
+/* ================= BUTTONS ================= */
 
-/* Logout button */
-.logout-btn {
-    background: #ef4444;
-    padding: 6px 16px;
+/* Login Button */
+.login-btn {
+    padding: 6px 18px;
     border-radius: 20px;
     text-decoration: none;
-    color: white;
     font-weight: 500;
+    border: 1px solid white;
+    color: white;
+    transition: 0.3s;
+}
+
+.login-btn:hover {
+    background: white;
+    color: #2563eb;
+}
+
+/* Register Button */
+.register-btn {
+    padding: 6px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 500;
+    background: #10b981;
+    color: white;
+    transition: 0.3s;
+}
+
+.register-btn:hover {
+    background: #059669;
+}
+
+/* Logout Button */
+.logout-btn {
+    padding: 6px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 500;
+    background: #ef4444;
+    color: white;
     transition: 0.3s;
 }
 
@@ -136,7 +153,7 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 60px 70px;  /* More breathing space */
+    padding: 60px 70px;
 }
 
 /* ================= FOOTER ================= */

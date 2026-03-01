@@ -1,74 +1,129 @@
+/* ===============================
+   BOOKING PAGE - CLEAN LIGHT THEME
+   =============================== */
+
+/* Page Layout */
 .booking-container {
     display: flex;
     justify-content: center;
-    margin-top: 60px;
+    align-items: center;
+    padding: 80px 20px;
 }
 
+/* Main Card */
 .booking-card {
-    background: #1e293b;
+    width: 520px;
+    background: #ffffff;
     padding: 40px;
-    width: 450px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+    color: #1e293b;
 }
 
+/* Title */
 .booking-card h2 {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
+    font-size: 26px;
+    color: #2563eb;
 }
 
+/* Route Summary Box */
+.route-summary {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 30px;
+    font-size: 14px;
+    line-height: 1.7;
+    border: 1px solid #e2e8f0;
+}
+
+.route-summary p {
+    margin: 6px 0;
+    color: #334155;
+}
+
+/* Labels */
 .booking-card label {
     display: block;
+    margin-top: 18px;
     margin-bottom: 6px;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 14px;
+    color: #334155;
 }
 
-.booking-card input,
-.booking-card select {
+/* Inputs & Select */
+.booking-card select,
+.booking-card input {
     width: 100%;
     padding: 10px;
-    border-radius: 8px;
-    border: none;
-    margin-bottom: 20px;
-    background: #334155;
-    color: white;
-}
-
-.booking-card input:focus,
-.booking-card select:focus {
-    outline: 2px solid #38bdf8;
-}
-
-.passenger-box {
-    background: #0f172a;
-    padding: 15px;
     border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.booking-card select:focus,
+.booking-card input:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+
+/* Passenger Box */
+.passenger-box {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 12px;
     margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
 }
 
 .passenger-box h4 {
     margin-bottom: 10px;
-    color: #38bdf8;
+    color: #2563eb;
+    font-size: 14px;
 }
 
+/* Price Preview */
+.price-preview {
+    margin: 12px 0;
+    font-weight: bold;
+    color: #2563eb;
+    font-size: 15px;
+}
+
+/* Error Box */
+.error-text {
+    background: rgba(239,68,68,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    color: #ef4444;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Confirm Button */
 .confirm-btn {
     width: 100%;
-    padding: 12px;
-    border-radius: 30px;
+    padding: 14px;
+    background: linear-gradient(90deg, #2563eb, #1e40af);
     border: none;
-    background: linear-gradient(90deg, #38bdf8, #0ea5e9);
-    color: #0f172a;
+    border-radius: 12px;
     font-weight: bold;
+    font-size: 15px;
+    margin-top: 15px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: 0.3s ease;
+    color: #ffffff;
 }
 
 .confirm-btn:hover {
-    transform: scale(1.05);
-}
-
-.error-text {
-    color: red;
-    text-align: center;
-    margin-bottom: 15px;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(37,99,235,0.35);
 }
